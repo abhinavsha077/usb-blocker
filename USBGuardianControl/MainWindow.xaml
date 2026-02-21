@@ -45,41 +45,69 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <Style TargetType="Button" x:Key="GhostBtn" BasedOn="{StaticResource ModernBtn}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#605E5C"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E1DFDD"/>
+                    <Setter Property="Foreground" Value="#323130"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>  <!-- 0: Header -->
+            <RowDefinition Height="Auto"/>  <!-- 1: Auth -->
+            <RowDefinition Height="Auto"/>  <!-- 2: Master Policy -->
+            <RowDefinition Height="Auto"/>  <!-- 3: Device label -->
+            <RowDefinition Height="*"/>     <!-- 4: Device list -->
+            <RowDefinition Height="Auto"/>  <!-- 5: Status bar -->
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <TextBlock Grid.Row="0" Text="USB Guardian Control Panel" FontSize="22" FontWeight="Bold" Foreground="#323130" Margin="0,0,0,15" HorizontalAlignment="Center"/>
+        <TextBlock Grid.Row="0" Text="USB Guardian Control Panel"
+                   FontSize="22" FontWeight="Bold" Foreground="#323130"
+                   Margin="0,0,0,15" HorizontalAlignment="Center"/>
 
         <!-- Authentication -->
-        <Border Grid.Row="1" Background="White" CornerRadius="8" Padding="15" Margin="0,0,0,15" 
+        <Border Grid.Row="1" Background="White" CornerRadius="8" Padding="15" Margin="0,0,0,15"
                 BorderBrush="#E1DFDD" BorderThickness="1">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="Admin Password:" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
-                <PasswordBox x:Name="txtPassword" Width="200" Height="28" Padding="5" Margin="0,0,15,0" 
-                             BorderBrush="#C8C6C4" BorderThickness="1"/>
-                <Button Content="Connect &amp; Refresh" Style="{StaticResource ModernBtn}" Click="BtnRefresh_Click"/>
-            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Password + Connect -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="Admin Password:" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                    <PasswordBox x:Name="txtPassword" Width="200" Height="28" Padding="5" Margin="0,0,15,0"
+                                 BorderBrush="#C8C6C4" BorderThickness="1"/>
+                    <Button Content="Connect &amp; Refresh" Style="{StaticResource ModernBtn}" Click="BtnRefresh_Click"/>
+                </StackPanel>
+
+                <!-- Change Password link -->
+                <Button Grid.Column="1" Content="⚙ Change Password"
+                        Style="{StaticResource GhostBtn}"
+                        Padding="10,5" VerticalAlignment="Center"
+                        Click="BtnOpenChangePassword_Click"/>
+            </Grid>
         </Border>
 
         <!-- System Master Controls -->
-        <Border Grid.Row="2" Background="White" CornerRadius="8" Padding="15" Margin="0,0,0,15" 
+        <Border Grid.Row="2" Background="White" CornerRadius="8" Padding="15" Margin="0,0,0,15"
                 BorderBrush="#E1DFDD" BorderThickness="1">
             <StackPanel>
                 <TextBlock Text="System Master Policy" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
                 <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left">
                     <Button Content="Unlock All Indefinitely" Style="{StaticResource SuccessBtn}" Margin="0,0,10,10" Click="BtnUnlock_Click"/>
-                    <Button Content="Lock System (Enforce)" Style="{StaticResource DangerBtn}" Margin="0,0,10,10" Click="BtnLock_Click"/>
-                    
+                    <Button Content="Lock System (Enforce)"   Style="{StaticResource DangerBtn}"  Margin="0,0,10,10" Click="BtnLock_Click"/>
                     <StackPanel Orientation="Horizontal" Margin="0,0,10,10">
                         <TextBlock Text="Timed:" VerticalAlignment="Center" Margin="5,0"/>
                         <TextBox x:Name="txtMinutes" Width="40" Height="28" Text="30" TextAlignment="Center" VerticalContentAlignment="Center"/>
@@ -90,14 +118,18 @@
             </StackPanel>
         </Border>
 
-        <TextBlock Grid.Row="3" Text="Granular Device Control" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,5"/>
-        
+        <!-- Granular Device Control label -->
+        <TextBlock Grid.Row="3" Text="Granular Device Control"
+                   FontWeight="SemiBold" FontSize="14" Margin="0,0,0,5"/>
+
         <!-- Device List -->
-        <Border Grid.Row="4" Background="White" CornerRadius="8" BorderBrush="#E1DFDD" BorderThickness="1" Padding="1">
-            <ListView x:Name="lvDevices" BorderThickness="0" Background="Transparent" ScrollViewer.VerticalScrollBarVisibility="Auto">
+        <Border Grid.Row="4" Background="White" CornerRadius="8"
+                BorderBrush="#E1DFDD" BorderThickness="1" Padding="1">
+            <ListView x:Name="lvDevices" BorderThickness="0" Background="Transparent"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                         <Setter Property="Padding" Value="10,5"/>
                         <Setter Property="BorderBrush" Value="#E1DFDD"/>
                         <Setter Property="BorderThickness" Value="0,0,0,1"/>
@@ -110,7 +142,7 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            
+
                             <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" TextWrapping="Wrap"/>
                                 <TextBlock Text="{Binding DeviceID}" FontSize="11" Foreground="#605E5C" TextWrapping="Wrap" Margin="0,0,0,3"/>
@@ -123,11 +155,11 @@
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Button Content="Allow" Style="{StaticResource SuccessBtn}" Margin="5,0" Width="60" 
-                                        Click="BtnAllowDevice_Click" Tag="{Binding DeviceID}" 
+                                <Button Content="Allow" Style="{StaticResource SuccessBtn}" Margin="5,0" Width="60"
+                                        Click="BtnAllowDevice_Click" Tag="{Binding DeviceID}"
                                         Visibility="{Binding ShowAllow, FallbackValue=Visible}"/>
-                                <Button Content="Block" Style="{StaticResource DangerBtn}" Margin="5,0" Width="60" 
-                                        Click="BtnBlockDevice_Click" Tag="{Binding DeviceID}" 
+                                <Button Content="Block" Style="{StaticResource DangerBtn}"  Margin="5,0" Width="60"
+                                        Click="BtnBlockDevice_Click" Tag="{Binding DeviceID}"
                                         Visibility="{Binding ShowBlock, FallbackValue=Visible}"/>
                             </StackPanel>
                         </Grid>
@@ -136,10 +168,11 @@
             </ListView>
         </Border>
 
-        <!-- Status -->
+        <!-- Status bar -->
         <Border Grid.Row="5" Background="#E1DFDD" CornerRadius="4" Padding="10" Margin="0,15,0,0">
-            <TextBlock x:Name="lblStatus" Text="Ready. Enter password and click Connect." TextWrapping="Wrap" 
-                       HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="#323130"/>
+            <TextBlock x:Name="lblStatus" Text="Ready. Enter password and click Connect."
+                       TextWrapping="Wrap" HorizontalAlignment="Center"
+                       FontWeight="SemiBold" Foreground="#323130"/>
         </Border>
     </Grid>
 </Window>

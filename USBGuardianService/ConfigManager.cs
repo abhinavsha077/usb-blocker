@@ -131,5 +131,12 @@ namespace USBGuardianService
 
         public bool IsExplicitlyAllowed(string id) => _config.AllowedDevices.Contains(id);
         public bool IsExplicitlyBlocked(string id) => _config.BlockedDevices.Contains(id);
+
+        public void ChangePassword(string newPassword)
+        {
+            _config.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            SaveConfig();
+            _logger.LogInformation("Admin password changed successfully.");
+        }
     }
 }

@@ -89,6 +89,20 @@ namespace USBGuardianControl
             }
         }
 
+        private void BtnOpenChangePassword_Click(object sender, RoutedEventArgs e)
+        {
+            string currentPassword = txtPassword.Password;
+            if (string.IsNullOrEmpty(currentPassword))
+            {
+                lblStatus.Text = "Please enter your current admin password first.";
+                return;
+            }
+
+            var dialog = new ChangePasswordWindow(currentPassword) { Owner = this };
+            dialog.ShowDialog();
+        }
+
+
         private async Task RefreshDevicesAndStatusAsync(bool silent = false)
         {
             if (_isRefreshing) return;

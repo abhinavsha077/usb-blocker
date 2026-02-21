@@ -130,6 +130,13 @@ namespace USBGuardianService
                         return "SUCCESS:Device blocked";
                     }
                     return "ERROR:Missing device ID";
+                case "CHANGEPASSWORD":
+                    if (!string.IsNullOrEmpty(args))
+                    {
+                        _configManager.ChangePassword(args);
+                        return "SUCCESS:Password changed successfully";
+                    }
+                    return "ERROR:Missing new password";
                 default:
                     return "ERROR:Unknown command";
             }

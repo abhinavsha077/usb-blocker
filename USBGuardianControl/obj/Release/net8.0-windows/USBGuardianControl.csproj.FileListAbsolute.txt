@@ -17,3 +17,6 @@ T:\ArcX\USB Blocker\USBGuardianControl\obj\Release\net8.0-windows\refint\USBGuar
 T:\ArcX\USB Blocker\USBGuardianControl\obj\Release\net8.0-windows\USBGuardianControl.pdb
 T:\ArcX\USB Blocker\USBGuardianControl\obj\Release\net8.0-windows\USBGuardianControl.genruntimeconfig.cache
 T:\ArcX\USB Blocker\USBGuardianControl\obj\Release\net8.0-windows\ref\USBGuardianControl.dll
+T:\ArcX\USB Blocker\USBGuardianControl\obj\Release\net8.0-windows\USBGuardianControl.sourcelink.json
+T:\ArcX\USB Blocker\USBGuardianControl\obj\Release\net8.0-windows\ChangePasswordWindow.baml
+T:\ArcX\USB Blocker\USBGuardianControl\obj\Release\net8.0-windows\ChangePasswordWindow.g.cs
