@@ -16,12 +16,22 @@ namespace USBGuardianControl
         public string Name { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public bool IsAllowed { get; set; }
+        public bool IsHub { get; set; }
+        public string ConnectedDeviceName { get; set; } = string.Empty;
 
-        public string PolicyText => IsAllowed ? "ALLOWED" : "BLOCKED";
+        // Hub display
+        public string PolicyText  => IsAllowed ? "ALLOWED" : "BLOCKED";
         public string PolicyColor => IsAllowed ? "#107C10" : "#D13438";
-        
         public Visibility ShowAllow => IsAllowed ? Visibility.Collapsed : Visibility.Visible;
-        public Visibility ShowBlock => IsAllowed ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility ShowBlock => IsAllowed ? Visibility.Visible  : Visibility.Collapsed;
+
+        // Row type visibility
+        public Visibility HubRowVisibility    => IsHub  ? Visibility.Visible  : Visibility.Collapsed;
+        public Visibility DeviceRowVisibility => !IsHub ? Visibility.Visible  : Visibility.Collapsed;
+
+        // Connected device badge  
+        public string ConnectedLabel => Status == "OK" ? "● CONNECTED" : "○ BLOCKED / EJECTED";
+        public string ConnectedColor => Status == "OK" ? "#107C10"     : "#D13438";
     }
 
     public partial class MainWindow : Window
@@ -29,6 +39,8 @@ namespace USBGuardianControl
         private const string PipeName = "USBGuardianControlPipe";
         private DispatcherTimer _autoRefreshTimer;
         private bool _isRefreshing = false;
+
+        public string PcName => "🖥  " + Environment.MachineName;
 
         public MainWindow()
         {

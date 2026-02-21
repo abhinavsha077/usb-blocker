@@ -12,6 +12,8 @@ namespace USBGuardianService
         public string Name { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public bool IsAllowed { get; set; }
+        public bool IsHub { get; set; }                          // true = Root Hub row, false = plugged-in device row
+        public string ConnectedDeviceName { get; set; } = string.Empty; // friendly name of what's plugged in
     }
 
     public class UsbPolicyManager
@@ -92,9 +94,9 @@ namespace USBGuardianService
             bool isMasterUnlocked = IsUnlocked;
             try
             {
-                // Only find Physical Hubs / Ports as requested by the user
-                string query = "SELECT * FROM Win32_PnPEntity WHERE Name LIKE '%Hub%' AND PNPDeviceID LIKE 'USB%'";
-                using (var searcher = new ManagementObjectSearcher(query))
+                // --- Layer 1: Root Hubs (with Allow/Block policy) ---
+                string hubQuery = "SELECT * FROM Win32_PnPEntity WHERE Name LIKE '%Hub%' AND PNPDeviceID LIKE 'USB%'";
+                using (var searcher = new ManagementObjectSearcher(hubQuery))
                 {
                     foreach (ManagementObject device in searcher.Get())
                     {
@@ -110,10 +112,44 @@ namespace USBGuardianService
 
                         devices.Add(new UsbDeviceInfo
                         {
-                            DeviceID = id,
-                            Name = device["Name"]?.ToString() ?? "Unknown USB Device",
-                            Status = device["Status"]?.ToString() ?? "Unknown",
-                            IsAllowed = isEffectiveAllowed
+                            DeviceID  = id,
+                            Name      = device["Name"]?.ToString() ?? "Unknown USB Hub",
+                            Status    = device["Status"]?.ToString() ?? "Unknown",
+                            IsAllowed = isEffectiveAllowed,
+                            IsHub     = true
+                        });
+                    }
+                }
+
+                // --- Layer 2: Actually plugged-in devices (storage + phones/MTP) ---
+                var deviceQueries = new[]
+                {
+                    // No Status filter — show both active (OK) and blocked/ejected (Error) devices
+                    "SELECT * FROM Win32_PnPEntity WHERE PNPDeviceID LIKE 'USBSTOR%'",
+                    "SELECT * FROM Win32_PnPEntity WHERE PNPDeviceID LIKE 'USB\\VID%' " +
+                    "AND (Name LIKE '%Phone%' OR Name LIKE '%MTP%' OR Name LIKE '%Portable%' " +
+                    "OR Name LIKE '%Camera%' OR Name LIKE '%Android%' OR Name LIKE '%iPhone%')"
+                };
+
+                foreach (string q in deviceQueries)
+                {
+                    using var s = new ManagementObjectSearcher(q);
+                    foreach (ManagementObject d in s.Get())
+                    {
+                        string id   = d["PNPDeviceID"]?.ToString() ?? "Unknown";
+                        string name = d["Name"]?.ToString() ?? "Unknown USB Device";
+
+                        // Skip duplicates (e.g. disk & partition entries for same device)
+                        if (devices.Any(x => !x.IsHub && x.DeviceID == id)) continue;
+
+                        devices.Add(new UsbDeviceInfo
+                        {
+                            DeviceID            = id,
+                            Name                = name,
+                            Status              = d["Status"]?.ToString() ?? "Unknown",
+                            IsAllowed           = isMasterUnlocked,   // mirrors global state
+                            IsHub               = false,
+                            ConnectedDeviceName = name
                         });
                     }
                 }

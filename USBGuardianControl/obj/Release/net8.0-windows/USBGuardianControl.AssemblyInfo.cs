@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("USBGuardianControl")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+05cec355c5e1f0eedb9181fc43f160c60f69a4ea")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d67b11b6d6d000ccdfb64e2983b18a518d062480")]
 [assembly: System.Reflection.AssemblyProductAttribute("USBGuardianControl")]
 [assembly: System.Reflection.AssemblyTitleAttribute("USBGuardianControl")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

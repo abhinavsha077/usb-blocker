@@ -1,104 +1,112 @@
 # USB Guardian Endpoint Security
 
-USB Guardian is a robust, system-level security application designed to explicitly manage and lock down physical USB ports on Windows environments. It enables administrators to prevent unauthorized data exfiltration via USB Mass Storage, Phones, and MTP devices by electronically shutting down the Root Hub ports on the motherboard.
+USB Guardian is a robust, system-level security application designed to explicitly manage and lock down physical USB ports on Windows environments. It prevents unauthorized data exfiltration via USB Mass Storage, Phones, and MTP devices by electronically disabling Root Hub ports at the driver level — and also force-ejects any devices that are already connected when a lock command is issued.
 
 ## Architecture
 
 The project is split into three main components:
 
 1. **USBGuardianService (Core Daemon)**
-   A detached `.NET 8 Worker Service` that runs natively as `LocalSystem`. It loops in the background continuously enforcing the security rules. It listens for authorized commands passively via a Named Pipe.
+   A detached `.NET 8 Worker Service` that runs natively as `LocalSystem`. It loops every 5 seconds continuously enforcing security rules. It listens for authorized commands passively via a Named Pipe.
 
 2. **USBGuardianControl (Admin UI)**
-   A secure `.NET 8 WPF` application that administrators use to authenticate (via BCrypt password) and transmit locking commands to the hidden Service daemon. 
+   A secure `.NET 8 WPF` application that administrators use to authenticate (via BCrypt password) and transmit locking commands to the hidden Service daemon.
 
 3. **System Configuration**
-   The application stores its hashed passwords and Blacklist/Whitelist policies dynamically in `C:\ProgramData\USBGuardian\config.json`.
+   Hashed passwords and Blacklist/Whitelist policies are stored dynamically in `C:\ProgramData\USBGuardian\config.json`.
 
 ## Technical Mechanics
 
 ### Native Hub-Level Blocking
-Unlike older, unreliable methods that simply disable the `USBSTOR` registry key, USB Guardian actually targets the physical **USB Root Hub** network on your motherboard. 
-It uses WMI (`Win32_PnPEntity`) to locate your physical hubs and executes native Windows `pnputil.exe` commands to cut the data/power pathways structurally. This guarantees that devices (even smart MTP phones) cannot bypass the software block.
+Unlike older, unreliable methods that simply disable the `USBSTOR` registry key, USB Guardian targets the physical **USB Root Hub** network on your motherboard. It uses WMI (`Win32_PnPEntity`) to locate your physical hubs and executes native Windows `pnputil.exe` commands to cut the data/power pathways structurally.
+
+### Force-Eject on Lock (Two-Layer Security)
+When the system is locked, USB Guardian enforces a **two-layer** shutdown:
+- **Layer 1** — Disables all USB Root Hubs (blocks new connections)
+- **Layer 2** — Scans for and individually disables any `USBSTOR` (flash drives, HDDs) and MTP (phones, cameras) devices that are **already connected and mounted**, preventing mid-session data exfiltration
+
+When unlocked, both layers are reversed — hubs are re-enabled and any previously force-ejected devices are automatically re-enabled within the next 5-second enforcement cycle.
 
 ### Asynchronous IPC
-Communication between the Admin UI and the Service is handled by Windows Named Pipes (`USBGuardianControlPipe`). The Service handles hardware execution in detached asynchronous Tasks inside C# to ensure the UI interface never hangs or freezes during driver toggles.
+Communication between the Admin UI and Service is handled via Windows Named Pipes (`USBGuardianControlPipe`). Hardware execution runs in detached async Tasks inside C# to ensure the UI never freezes.
 
 ### Master Overrides
-- **Unlock All Indefinitely**: Imposes a global "ALLOW" rule. Wipes the legacy blacklist.
-- **Lock System (Enforce)**: Imposes a global "BLOCK" rule. Wipes the legacy whitelist.
-- **Granular Toggles**: An Admin can pick an individual active USB Hub and explicitly allow or block it, bypassing the global rule.
+- **Unlock All Indefinitely**: Global ALLOW rule. Wipes the legacy blacklist.
+- **Lock System (Enforce)**: Global BLOCK rule. Wipes the legacy whitelist. Immediately force-ejects connected devices.
+- **Timed Unlock**: Temporarily unlocks for N minutes, then auto-relocks.
+- **Granular Toggles**: Pick an individual USB Hub and explicitly allow or block it.
+
+### Change Password (In-App)
+Admins can change the BCrypt password directly from the Control Panel without touching the filesystem. A popup dialog authenticates the request over the Named Pipe and saves the new hash to `config.json` instantly.
 
 ## Deployment & Usage
 
 ### Installing the Service
-To correctly install the hidden engine:
-1. Run `Install-Background-Service.bat` as Administrator. 
-2. The script will securely register `USBGuardianService.exe` as an auto-starting Windows Service running as LocalSystem.
+1. Run `Install-Background-Service.bat` as Administrator.
+2. The script registers `USBGuardianService.exe` as an auto-starting Windows Service running as LocalSystem.
 
 ### Controlling the Ports
 1. Double-click `Start-Control.bat` (runs the UI as Administrator).
-2. Enter the default password.
-3. View the live states of your motherboard Hubs. Click Lock/Unlock, or target specific ports.
+2. Enter the default password (`admin`).
+3. View the live states of your motherboard Hubs and any connected devices.
+4. Click Lock/Unlock, or target specific ports.
 
-### Updating/Recompiling
-If making modifications to the C# source:
-1. Double-click `Update-Service.bat` to gracefully halt the service, copy the new bins, and reboot the daemon seamlessly.
+### Changing the Admin Password
+1. Enter your current password in the main window and click **Connect & Refresh**.
+2. Click **⚙ Change Password** (top-right of the auth row).
+3. Enter and confirm the new password in the popup dialog.
+4. Click **Change Password** — the new BCrypt hash is saved to `config.json` immediately.
+
+### Updating / Recompiling
+Double-click `Update-Service.bat` to gracefully halt the service, rebuild the entire `.sln`, copy new binaries for both the Service **and** the Control UI, and reboot the daemon.
 
 ## File Structure
 
-The project is structured with strict separation of privilege and concerns:
-
 ### `USBGuardianService\` (Background Daemon)
-The core security engine that runs silently with System privileges.
 
-| File | Size | Lines | Purpose |
-|------|------|-------|---------|
-| `ConfigManager.cs` | 4.4 KB | ~120 | Handles parsing, saving, and querying `config.json` containing the Allowed/Blocked hardware rules and BCrypt password verifier. |
-| `PipeServer.cs` | 5.7 KB | ~135 | Hosted IPC Named Pipe Server. Listens securely for authenticated lock/unlock commands from the UI and manages background threading. |
-| `UsbPolicyManager.cs` | 8.4 KB | ~220 | The core logic engine. Handles precise native `pnputil` execution, Windows WMI `Win32_PnPEntity` queries, and port blocking logic. |
-| `Worker.cs` | 1.1 KB | ~35 | The detached `.NET 8` BackgroundService loop that ensures the service remains active and pipes stay open. |
-| `Program.cs` | 0.9 KB | ~30 | Dependency Injection setup initializing the service layer and logger hooks. |
+| File | Purpose |
+|------|---------|
+| `ConfigManager.cs` | Parses `config.json`. Handles BCrypt password verification and `ChangePassword()`. |
+| `PipeServer.cs` | Named Pipe IPC server. Handles: `LOCK`, `UNLOCK`, `STATUS`, `LIST`, `ALLOW`, `BLOCK`, `CHANGEPASSWORD`. |
+| `UsbPolicyManager.cs` | Core engine. Hub-level `pnputil` enforcement, `ForceEjectActiveUsbDevices()`, `ForceEnableUsbDevices()`, and full device listing with `IsHub` flag. |
+| `Worker.cs` | `.NET 8` BackgroundService loop — calls `Enforce()` every 5 seconds. |
+| `Program.cs` | Dependency Injection bootstrapping. |
 
 ### `USBGuardianControl\` (Admin Panel)
-The visual dashboard for authenticated administrators to monitor port statuses and issue overriding commands.
 
-| File | Size | Lines | Purpose |
-|------|------|-------|---------|
-| `MainWindow.xaml` | 8.7 KB | ~125 | The modern WPF markup view designing the Control Dashboard, password login, and dynamic hardware toggles. |
-| `MainWindow.xaml.cs` | 6.9 KB | ~190 | The WPF code-behind logic. Pings the daemon via the Named Pipe client adapter, serializes WMI lists to JSON, and reacts to UI callbacks instantly. |
-| `App.xaml` / `.cs` | 0.4 KB | ~20 | C# application bootstrapping logic. |
+| File | Purpose |
+|------|---------|
+| `MainWindow.xaml` | WPF dashboard — PC hostname header, auth row, master policy controls, dual-template device list (Hub rows + Connected Device rows). |
+| `MainWindow.xaml.cs` | UI code-behind. Named Pipe client, auto-refresh timer (3 sec), all button handlers. |
+| `ChangePasswordWindow.xaml` | Modal popup for changing the admin password. |
+| `ChangePasswordWindow.xaml.cs` | Validates input, sends `CHANGEPASSWORD` over pipe, shows inline error or success message. |
+| `App.xaml` / `.cs` | Application bootstrapping. |
 
 ### `.\` (Root Admin Scripts)
-Batch scripts designed to simplify execution, compilation, and management.
 
-| File | Size | Lines | Purpose |
-|------|------|-------|---------|
-| `Install-Background-Service.bat` | 1.1 KB | ~25 | Uses `sc.exe` to deploy and initialize the .NET 8 Worker Service silently as an auto-starting global security daemon. |
-| `Update-Service.bat` | 0.4 KB | ~10 | Safely halts the running Windows daemon, rebuilds the C# `.sln` and copies fresh `.exe` binaries before spinning it back up. |
-| `Start-Control.bat` | 0.1 KB | ~3 | Fast track script to boot up the Admin UI Panel natively. |
-| `Start-Service.bat` | 0.3 KB | ~10 | Fast track script to initialize the internal binary if bypassing the Installer pipeline. |
-| `ChangeManagement.md`| 3.0 KB | 43 | The phase-by-phase chronological ledger outlining development pivots, bug fixes, and patch notes. |
+| File | Purpose |
+|------|---------|
+| `Install-Background-Service.bat` | Registers the service as auto-start under LocalSystem. |
+| `Update-Service.bat` | Stops service → rebuilds & publishes **both** Service and Control UI → restarts service. |
+| `Start-Control.bat` | Launches the Admin UI as Administrator. |
+| `Uninstall-Background-Service.bat` | Stops and deletes the Windows service. |
 
 ## Complete Deployment Guide
 
 **Step 1. Compilation**
-Ensure your machine is equipped with the **.NET 8 SDK**. Open the command prompt in the `USB Blocker` root directory and type:
+Ensure **.NET 8 SDK** is installed. In the project root:
 ```cmd
 dotnet build "USB Blocker.sln" -c Release
 ```
-This builds both the Background Service and the Admin UI cleanly. Alternatively, you can run the `Update-Service.bat` script which will manage the pipeline for you.
 
 **Step 2. Daemon Configuration**
-Before you install the service, define your admin password. The defaults are hashed inside `C:\ProgramData\USBGuardian\config.json`. If you wish to change the default hash, generate a new BCrypt string and modify the configuration payload.
-_The built-in default password string is `admin`._
+The default password is `admin`. It is BCrypt-hashed and stored in `C:\ProgramData\USBGuardian\config.json` on first run. Change it via the in-app **⚙ Change Password** dialog after first login.
 
-**Step 3. Installing the Windows Background Policy Engine**
-Right-click `Install-Background-Service.bat` and select **Run as Administrator**.
-This process performs the following key steps automatically:
-- Formally registers the executable under `services.msc` as `USBGuardianService`.
-- Sets the `Start=Auto` directive so Port blocking is heavily enforced immediately traversing native Windows Boot loops.
-- Sets the `obj=LocalSystem` directive, creating extreme tamper resistance guaranteeing local users cannot terminate the daemon via Task Manager.
+**Step 3. Install the Windows Background Policy Engine**
+Right-click `Install-Background-Service.bat` → **Run as Administrator**.
+- Registers the executable under `services.msc` as `USB Guardian Service`
+- Sets `Start=Auto` (enforced on every boot)
+- Sets `obj=LocalSystem` (tamper resistant — cannot be killed by standard users)
 
 **Step 4. Final Verification**
-The system is now actively protecting the machine. Double-click the `Start-Control.bat` file to load the UI panel, login with the default test credentials (`admin`), and verify you can view and aggressively block the USB Root Hubs listed in your local physical topology.
+Open `Start-Control.bat`, login with `admin`, confirm you can see the USB Root Hubs listed with their policy states and any connected device cards below them.

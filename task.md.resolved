@@ -1,28 +1,55 @@
 # USB Guardian Task List
 
-- [x] **Planning**
-  - [x] Create initial plan and task breakdown
-  - [x] Get user approval on the plan
-- [ ] **STEP 1 — Create Windows Service Project**
-  - [/] Initialize `USBGuardianService` (.NET 8 Worker Service)
-  - [ ] Implement USB blocking logic via Registry (`HKLM\SYSTEM\CurrentControlSet\Services\USBSTOR`)
-  - [ ] Create 5-second polling loop
-- [ ] **STEP 2 — Add Command Listener (secure control channel)**
-  - [ ] Implement Named Pipe Server (`USBGuardianPipe`)
-  - [ ] Support commands: `UNLOCK`, `LOCK`, `UNLOCK:<mins>`, `STATUS`
-- [ ] **STEP 3 — Password Security**
-  - [ ] Implement BCrypt password verification
-- [ ] **STEP 4 — Build Admin Control Panel**
-  - [ ] Initialize `USBGuardianControl` (.NET 8 WPF App)
-  - [ ] Create Login Screen
-  - [ ] Create Control Screen (Unlock, Lock, Unlock for X mins, Status label)
-  - [ ] Connect to Named Pipe
-- [ ] **STEP 5 — Auto Relock Timer**
-  - [ ] Maintain `unlock_expiry` logic in the service
-- [ ] **STEP 6 — Anti-Tamper Protection**
-  - [ ] Configure automatic restart on failure
-- [ ] **STEP 7 — Install Automatically on Boot**
-  - [ ] Set startup type to Automatic
-- [ ] **STEP 8 — Build Professional Installer**
-  - [ ] Initialize WiX Toolset installer project
-  - [ ] Configure deployment, default password, permissions
+## Foundation
+- [x] Planning & initial task breakdown
+- [x] User approval on architecture plan
+
+## Phase 1 — Core Service
+- [x] Initialize `USBGuardianService` (.NET 8 Worker Service)
+- [x] Implement USB blocking via Registry (`HKLM\SYSTEM\CurrentControlSet\Services\USBSTOR`)
+- [x] Create 5-second polling enforcement loop (`Worker.cs`)
+- [x] Named Pipe IPC Server (`USBGuardianControlPipe`) in `PipeServer.cs`
+- [x] Support pipe commands: `LOCK`, `UNLOCK`, `UNLOCK:<mins>`, `STATUS`, `LIST`, `ALLOW`, `BLOCK`
+- [x] BCrypt password hashing and verification (`ConfigManager.cs`)
+- [x] `.NET 8 WPF` Admin Control Panel (`USBGuardianControl`)
+- [x] Auto-relock timer (unlock expiry logic in `UsbPolicyManager.cs`)
+- [x] `Install-Background-Service.bat` — registers service as auto-start LocalSystem
+
+## Phase 2 — Granular Hub-Level Control
+- [x] Migrate from registry-based blocking to native `pnputil.exe` hub disabling
+- [x] WMI `Win32_PnPEntity` query targeting USB Root Hubs
+- [x] Individual hub Allow/Block toggle in UI and pipe protocol
+- [x] Fix conflict between Master Unlock/Lock and granular allow/block lists
+- [x] Fix deadlock caused by PowerShell → moved to pure `pnputil` + async `Task.Run`
+
+## Phase 3 — Cleanup & Documentation
+- [x] Remove all temporary diagnostic/logging scripts
+- [x] Write `README.md` with full architecture and deployment guide
+- [x] Write `ChangeManagement.md` with phase-by-phase development ledger
+
+## Phase 4 — Security Hardening: Change Password
+- [x] Add `ChangePassword()` method to `ConfigManager.cs`
+- [x] Add `CHANGEPASSWORD` command to `PipeServer.cs` pipe protocol
+- [x] Create `ChangePasswordWindow.xaml` modal popup
+- [x] Create `ChangePasswordWindow.xaml.cs` code-behind with input validation
+- [x] Add `⚙ Change Password` ghost button to auth row in `MainWindow.xaml`
+- [x] Fix broken `Grid.Row` layout (overlapping System Master Policy and Granular Device Control)
+- [x] Update `Update-Service.bat` to also publish `USBGuardianControl` UI
+
+## Phase 5 — Two-Layer Lock Enforcement
+- [x] Identify security gap: force-eject already-mounted USB drives on lock
+- [x] Add `ForceEjectActiveUsbDevices()` — disables `USBSTOR%` + USB MTP/phone devices
+- [x] Identify follow-on bug: disabled USBSTOR devices don't recover on unlock
+- [x] Add `ForceEnableUsbDevices()` — re-enables disabled USBSTOR/MTP on unlock
+- [x] Refactor both into `ApplyToUsbChildDevices()` shared helper
+- [x] `Enforce()` now fully symmetric: lock → eject, unlock → re-enable
+
+## Phase 6 — UI: Connected Device Indicators & PC Hostname
+- [x] Show PC hostname (`Environment.MachineName`) below panel title
+- [x] Extend `UsbDeviceInfo` model with `IsHub` and `ConnectedDeviceName` fields
+- [x] Extend `GetConnectedDevices()` with second WMI pass for `USBSTOR` + MTP devices
+- [x] Add `IsHub`, `HubRowVisibility`, `DeviceRowVisibility`, `ConnectedLabel`, `ConnectedColor` to `UsbDeviceViewModel`
+- [x] Dual-template device list in `MainWindow.xaml`:
+  - Hub rows: `⬡` icon, policy badge, Allow/Block buttons
+  - Connected device rows: `🔌` icon, indented, colour-coded CONNECTED/BLOCKED badge
+- [x] Update all documentation (README, ChangeManagement, task list)
