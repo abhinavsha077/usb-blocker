@@ -1,0 +1,46 @@
+# USB Guardian System Design
+
+This plan outlines the architecture for the production-grade USB Control System.
+
+## User Review Required
+> [!IMPORTANT]
+> Please review this plan before proceeding. This project will involve changing Windows system-level security, creating a background system service, modifying registry settings for `USBSTOR`, and configuring WPF interfaces. 
+
+## Proposed Changes
+
+### Solution and Base Architecture
+We will set up a main solution inside `t:\ArcX\USB Blocker` containing:
+- `USBGuardianService`: .NET 8 Worker Service running as LocalSystem.
+- `USBGuardianControl`: .NET 8 WPF App for admin interface.
+- `USBGuardianShared`: Shared data models and named pipe helper classes.
+
+### 1. Windows Service (USBGuardianService)
+- **Role**: Core security engine.
+- **Workflow**: Runs a `BackgroundService` executing every 5 seconds.
+- **Registry Management**: Checks and modifies `HKLM\SYSTEM\CurrentControlSet\Services\USBSTOR` under the `Start` value (`3` = enabled, `4` = disabled). 
+- **Security**: Will run as `LocalSystem` so non-admin users cannot bypass it.
+
+### 2. Secure Command channel & Security
+- **Named Pipes**: An IPC server named `USBGuardianControlPipe` running securely, accessible only by authenticated users.
+- **BCrypt**: Passwords will not be stored in plain text. A configuration file in `C:\ProgramData\USBGuardian\config.json` will hold the password hash.
+
+### 3. Admin Control Application
+- **Role**: WPF application avoiding direct registry modification.
+- **Features**: Submits commands through Named Pipes (e.g. `UNLOCK`, `LOCK`, `UNLOCK:30`, `STATUS`). Includes a main login screen and a central control dashboard.
+
+### 4. Auditing and Tamper Protection
+- **Logging**: Implement persistent logging in `C:\ProgramData\USBGuardian\logs\audit.log`.
+- **Tampering**: Service recovery settings will be configured to restart automatically.
+
+### 5. WiX Installer
+- Create an MSI installer to handle configuration, service registration, and folder ACLs.
+
+## Verification Plan
+### Automated Tests
+- This system interacts deeply with Windows security features so automated unit tests will primarily cover isolated components (e.g., config parsing, hashing), while system testing checks actual integration. We will not set up complex CI/CD test automation at this stage unless requested.
+
+### Manual Verification
+1. Install/Run the Windows Service in a local developer mode.
+2. Confirm the USB storage functionality prevents USB access manually using Windows Device Manager or `regedit`.
+3. Use the WPF app to authenticate and verify Named Pipe command handling.
+4. Verify the 5-second auto-enforce loop accurately restricts any manual overrides of `USBSTOR`.

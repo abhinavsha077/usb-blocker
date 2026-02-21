@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="USB Guardian" Language="1033" Version="1.0.0.0" Manufacturer="Security Corp" UpgradeCode="{A1B2C3D4-E5F6-4789-9101-112131415161}">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="ProductFeature" Title="USBGuardianInstaller" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="ConfigFolderComponents" />
+    </Feature>
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="USBGuardian" />
+      </Directory>
+      <!-- Config directory in ProgramData -->
+      <Directory Id="CommonAppDataFolder">
+        <Directory Id="CONFIGFOLDER" Name="USBGuardian" />
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <!-- Service Component -->
+      <Component Id="ServiceComponent" Guid="{12345678-1234-1234-1234-123456789012}">
+        <File Id="USBGuardianServiceExe" Source="..\USBGuardianService\bin\Release\net8.0-windows\USBGuardianService.exe" KeyPath="yes" />
+        <ServiceInstall
+          Id="ServiceInstaller"
+          Type="ownProcess"
+          Name="USB Guardian Service"
+          DisplayName="USB Guardian Policy Service"
+          Description="Enforces USB blocking policy and manages secure IPC."
+          Start="auto"
+          Account="LocalSystem"
+          ErrorControl="normal" />
+          
+        <ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="USB Guardian Service" Wait="yes" />
+      </Component>
+
+      <!-- UI Component -->
+      <Component Id="ControlComponent" Guid="{87654321-4321-4321-4321-210987654321}">
+        <File Id="USBGuardianControlExe" Source="..\USBGuardianControl\bin\Release\net8.0-windows\USBGuardianControl.exe" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="ConfigFolderComponents" Directory="CONFIGFOLDER">
+      <Component Id="ConfigFolderPermissions" Guid="{98765432-8765-4321-1234-ABCD12345678}">
+        <CreateFolder>
+           <!-- Only SYSTEM and Administrators can access -->
+           <Permission User="Administrators" GenericAll="yes" />
+           <Permission User="SYSTEM" GenericAll="yes" />
+        </CreateFolder>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

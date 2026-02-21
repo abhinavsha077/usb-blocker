@@ -1,0 +1,5 @@
+T:\ArcX\USB Blocker\Dist\Control\USBGuardianControl.exe
+T:\ArcX\USB Blocker\Dist\Control\USBGuardianControl.dll
+T:\ArcX\USB Blocker\Dist\Control\USBGuardianControl.deps.json
+T:\ArcX\USB Blocker\Dist\Control\USBGuardianControl.runtimeconfig.json
+T:\ArcX\USB Blocker\Dist\Control\USBGuardianControl.pdb

@@ -1,0 +1,44 @@
+﻿[
+    {
+        "Status":  "OK",
+        "Class":  "USB",
+        "FriendlyName":  "USB Composite Device",
+        "InstanceId":  "USB\\VID_0408\u0026PID_5365\\6\u002631D965D7\u00260\u00263"
+    },
+    {
+        "Status":  "OK",
+        "Class":  "USB",
+        "FriendlyName":  "AMD USB 3.10 eXtensible Host Controller - 1.10 (Microsoft)",
+        "InstanceId":  "PCI\\VEN_1022\u0026DEV_1639\u0026SUBSYS_87B2103C\u0026REV_00\\4\u002612C9051D\u00260\u00260341"
+    },
+    {
+        "Status":  "OK",
+        "Class":  "USB",
+        "FriendlyName":  "AMD USB 3.10 eXtensible Host Controller - 1.10 (Microsoft)",
+        "InstanceId":  "PCI\\VEN_1022\u0026DEV_1639\u0026SUBSYS_87B2103C\u0026REV_00\\4\u002612C9051D\u00260\u00260441"
+    },
+    {
+        "Status":  "OK",
+        "Class":  "DiskDrive",
+        "FriendlyName":  "WDC WD10SPSX-60A6WT0",
+        "InstanceId":  "SCSI\\DISK\u0026VEN_WDC\u0026PROD_WD10SPSX-60A6WT0\\5\u002669E482E\u00260\u0026000000"
+    },
+    {
+        "Status":  "OK",
+        "Class":  "USB",
+        "FriendlyName":  "USB Root Hub (USB 3.0)",
+        "InstanceId":  "USB\\ROOT_HUB30\\5\u0026BF5BBF\u00260\u00260"
+    },
+    {
+        "Status":  "OK",
+        "Class":  "DiskDrive",
+        "FriendlyName":  "MTFDHBA256TDV-1AY1AABHA",
+        "InstanceId":  "SCSI\\DISK\u0026VEN_NVME\u0026PROD_MTFDHBA256TDV-1A\\5\u0026341FEEDA\u00260\u0026000000"
+    },
+    {
+        "Status":  "OK",
+        "Class":  "USB",
+        "FriendlyName":  "USB Root Hub (USB 3.0)",
+        "InstanceId":  "USB\\ROOT_HUB30\\5\u002623C0FE1C\u00260\u00260"
+    }
+]

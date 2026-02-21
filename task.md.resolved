@@ -1,0 +1,28 @@
+# USB Guardian Task List
+
+- [x] **Planning**
+  - [x] Create initial plan and task breakdown
+  - [x] Get user approval on the plan
+- [ ] **STEP 1 — Create Windows Service Project**
+  - [/] Initialize `USBGuardianService` (.NET 8 Worker Service)
+  - [ ] Implement USB blocking logic via Registry (`HKLM\SYSTEM\CurrentControlSet\Services\USBSTOR`)
+  - [ ] Create 5-second polling loop
+- [ ] **STEP 2 — Add Command Listener (secure control channel)**
+  - [ ] Implement Named Pipe Server (`USBGuardianPipe`)
+  - [ ] Support commands: `UNLOCK`, `LOCK`, `UNLOCK:<mins>`, `STATUS`
+- [ ] **STEP 3 — Password Security**
+  - [ ] Implement BCrypt password verification
+- [ ] **STEP 4 — Build Admin Control Panel**
+  - [ ] Initialize `USBGuardianControl` (.NET 8 WPF App)
+  - [ ] Create Login Screen
+  - [ ] Create Control Screen (Unlock, Lock, Unlock for X mins, Status label)
+  - [ ] Connect to Named Pipe
+- [ ] **STEP 5 — Auto Relock Timer**
+  - [ ] Maintain `unlock_expiry` logic in the service
+- [ ] **STEP 6 — Anti-Tamper Protection**
+  - [ ] Configure automatic restart on failure
+- [ ] **STEP 7 — Install Automatically on Boot**
+  - [ ] Set startup type to Automatic
+- [ ] **STEP 8 — Build Professional Installer**
+  - [ ] Initialize WiX Toolset installer project
+  - [ ] Configure deployment, default password, permissions
