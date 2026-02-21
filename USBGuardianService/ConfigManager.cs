@@ -90,6 +90,8 @@ namespace USBGuardianService
         }
 
         public List<string> GetAllowedDevices() => new List<string>(_config.AllowedDevices);
+        public List<string> GetBlockedDevices()  => new List<string>(_config.BlockedDevices);
+
 
         public void AddAllowedDevice(string deviceId)
         {

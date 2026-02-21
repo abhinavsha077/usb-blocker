@@ -209,11 +209,15 @@ namespace USBGuardianService
                     _logger.LogError(ex, "Failed to enforce granular USB policy. Ensure the service has SYSTEM privileges.");
                 }
 
-                // Second layer: sync already-connected USB storage/MTP device states
-                if (!systemUnlocked)
-                    ForceEjectActiveUsbDevices();   // Kill already-mounted devices
+                // Second layer: sync USB storage/MTP device states
+                // Eject if: system globally locked  OR  any hub is explicitly blocked
+                // Re-enable only if: system fully unlocked AND no individual hub blocks exist
+                bool anyHubExplicitlyBlocked = _config.GetBlockedDevices().Count > 0;
+
+                if (!systemUnlocked || anyHubExplicitlyBlocked)
+                    ForceEjectActiveUsbDevices();   // Kill any mounted storage/MTP devices
                 else
-                    ForceEnableUsbDevices();         // Re-enable any that were force-ejected
+                    ForceEnableUsbDevices();         // Everything open — re-enable previously ejected devices
             }
         }
 
