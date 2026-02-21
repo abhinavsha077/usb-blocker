@@ -172,8 +172,58 @@ namespace USBGuardianService
                 {
                     _logger.LogError(ex, "Failed to enforce granular USB policy. Ensure the service has SYSTEM privileges.");
                 }
+
+                // Second layer: sync already-connected USB storage/MTP device states
+                if (!systemUnlocked)
+                    ForceEjectActiveUsbDevices();   // Kill already-mounted devices
+                else
+                    ForceEnableUsbDevices();         // Re-enable any that were force-ejected
             }
         }
+
+        /// <summary>Queries USB storage and MTP devices with a given status filter and runs pnputil on each.</summary>
+        private void ApplyToUsbChildDevices(string statusFilter, string pnputilVerb, string logVerb)
+        {
+            var queries = new[]
+            {
+                "SELECT * FROM Win32_PnPEntity WHERE PNPDeviceID LIKE 'USBSTOR%'",
+                "SELECT * FROM Win32_PnPEntity WHERE PNPDeviceID LIKE 'USB\\VID%' " +
+                "AND (Name LIKE '%Phone%' OR Name LIKE '%MTP%' OR Name LIKE '%Portable%' " +
+                "OR Name LIKE '%Camera%' OR Name LIKE '%Android%' OR Name LIKE '%iPhone%')"
+            };
+
+            foreach (string wmiQuery in queries)
+            {
+                try
+                {
+                    using var searcher = new ManagementObjectSearcher(wmiQuery);
+                    foreach (ManagementObject device in searcher.Get())
+                    {
+                        string deviceId = device["PNPDeviceID"]?.ToString();
+                        string status   = device["Status"]?.ToString();
+                        if (string.IsNullOrEmpty(deviceId)) continue;
+
+                        if (status == statusFilter)
+                        {
+                            _logger.LogInformation("{Verb} USB child device: {DeviceId}", logVerb, deviceId);
+                            ExecuteNativeCommand($"pnputil /{pnputilVerb} \"{deviceId}\"");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed during {Verb} pass on USB child devices.", logVerb);
+                }
+            }
+        }
+
+        private void ForceEjectActiveUsbDevices() =>
+            ApplyToUsbChildDevices(statusFilter: "OK",  pnputilVerb: "disable-device", logVerb: "Force-ejecting");
+
+        private void ForceEnableUsbDevices() =>
+            ApplyToUsbChildDevices(statusFilter: "Error", pnputilVerb: "enable-device",  logVerb: "Re-enabling");
+
+
 
         private void ExecuteNativeCommand(string commandArgs)
         {

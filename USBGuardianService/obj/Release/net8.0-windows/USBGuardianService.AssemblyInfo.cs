@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("USBGuardianService")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+badfd6755d64fc890429ef4e47a949e374393021")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+05cec355c5e1f0eedb9181fc43f160c60f69a4ea")]
 [assembly: System.Reflection.AssemblyProductAttribute("USBGuardianService")]
 [assembly: System.Reflection.AssemblyTitleAttribute("USBGuardianService")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
