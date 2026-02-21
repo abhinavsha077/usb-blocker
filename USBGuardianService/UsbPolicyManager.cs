@@ -24,6 +24,9 @@ namespace USBGuardianService
         private DateTime? _unlockExpiry = null;
         private readonly object _lockObj = new object();
 
+        // Track previous lock state to only trigger force-eject/enable on TRANSITIONS, not every cycle
+        private bool? _prevAnyBlocked = null;
+
         public UsbPolicyManager(ILogger<UsbPolicyManager> logger, ConfigManager config)
         {
             _logger = logger;
@@ -209,15 +212,21 @@ namespace USBGuardianService
                     _logger.LogError(ex, "Failed to enforce granular USB policy. Ensure the service has SYSTEM privileges.");
                 }
 
-                // Second layer: sync USB storage/MTP device states
-                // Eject if: system globally locked  OR  any hub is explicitly blocked
-                // Re-enable only if: system fully unlocked AND no individual hub blocks exist
+                // Second layer: sync USB storage/MTP device states on TRANSITIONS only
+                // Calling pnputil /enable-device on an already-mounted drive every 5s
+                // causes Windows to fire a reconnect event (USB sound + AutoPlay) each cycle.
                 bool anyHubExplicitlyBlocked = _config.GetBlockedDevices().Count > 0;
+                bool anyBlocked = !systemUnlocked || anyHubExplicitlyBlocked;
 
-                if (!systemUnlocked || anyHubExplicitlyBlocked)
-                    ForceEjectActiveUsbDevices();   // Kill any mounted storage/MTP devices
-                else
-                    ForceEnableUsbDevices();         // Everything open — re-enable previously ejected devices
+                if (_prevAnyBlocked == null || anyBlocked != _prevAnyBlocked.Value)
+                {
+                    _logger.LogInformation("Lock state changed → anyBlocked={B}. Applying child device policy.", anyBlocked);
+                    if (anyBlocked)
+                        ForceEjectActiveUsbDevices();
+                    else
+                        ForceEnableUsbDevices();
+                    _prevAnyBlocked = anyBlocked;
+                }
             }
         }
 
@@ -243,7 +252,9 @@ namespace USBGuardianService
                         string status   = device["Status"]?.ToString();
                         if (string.IsNullOrEmpty(deviceId)) continue;
 
-                        if (status == statusFilter)
+                        // null statusFilter means apply to ALL devices (safe for re-enable)
+                        bool matches = statusFilter == null || status == statusFilter;
+                        if (matches)
                         {
                             _logger.LogInformation("{Verb} USB child device: {DeviceId}", logVerb, deviceId);
                             ExecuteNativeCommand($"pnputil /{pnputilVerb} \"{deviceId}\"");
@@ -260,8 +271,9 @@ namespace USBGuardianService
         private void ForceEjectActiveUsbDevices() =>
             ApplyToUsbChildDevices(statusFilter: "OK",  pnputilVerb: "disable-device", logVerb: "Force-ejecting");
 
+        // null statusFilter = enable ALL found devices (WMI status may not be 'Error' after pnputil disable)
         private void ForceEnableUsbDevices() =>
-            ApplyToUsbChildDevices(statusFilter: "Error", pnputilVerb: "enable-device",  logVerb: "Re-enabling");
+            ApplyToUsbChildDevices(statusFilter: null, pnputilVerb: "enable-device",  logVerb: "Re-enabling");
 
 
 

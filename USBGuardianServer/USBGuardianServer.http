@@ -1,0 +1,6 @@
+@USBGuardianServer_HostAddress = http://localhost:5002
+
+GET {{USBGuardianServer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
