@@ -1,0 +1,6 @@
+{
+  "PowerShell": "7.6.5",
+  "RequireHttps": true,
+  "AclProtected": true,
+  "PendingTempFiles": 0
+}

@@ -1,5 +1,3 @@
-using System.IO.Pipes;
-using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -7,12 +5,14 @@ namespace USBGuardianControl
 {
     public partial class ChangePasswordWindow : Window
     {
-        private const string PipeName = "USBGuardianControlPipe";
+        private readonly ServerClient _server;
         private readonly string _currentPassword;
+        public string NewPassword { get; private set; } = string.Empty;
 
-        public ChangePasswordWindow(string currentPassword)
+        public ChangePasswordWindow(ServerClient server, string currentPassword)
         {
             InitializeComponent();
+            _server = server;
             _currentPassword = currentPassword;
         }
 
@@ -21,9 +21,19 @@ namespace USBGuardianControl
             string newPwd     = txtNewPwd.Password;
             string confirmPwd = txtConfirmPwd.Password;
 
-            if (string.IsNullOrWhiteSpace(newPwd))
+            if (string.IsNullOrWhiteSpace(newPwd) || newPwd.Length < 8)
             {
-                lblError.Text = "New password cannot be empty.";
+                lblError.Text = "New password must contain at least 8 characters.";
+                return;
+            }
+            if (newPwd.Length > 128)
+            {
+                lblError.Text = "New password cannot exceed 128 characters.";
+                return;
+            }
+            if (string.Equals(newPwd, "admin", System.StringComparison.OrdinalIgnoreCase))
+            {
+                lblError.Text = "Choose a password other than the shipped default.";
                 return;
             }
             if (newPwd != confirmPwd)
@@ -33,21 +43,35 @@ namespace USBGuardianControl
             }
 
             lblError.Text = "Sending...";
-            string response = await SendChangePasswordAsync(newPwd);
+            btnConfirm.IsEnabled = btnCancel.IsEnabled = false;
 
-            if (response != null && response.StartsWith("SUCCESS:"))
+            try
             {
-                MessageBox.Show(
-                    "Password changed successfully!\nUse the new password next time you connect.",
-                    "Success",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-                DialogResult = true;
-                Close();
+                string response = await _server.ChangePasswordAsync(_currentPassword, newPwd);
+
+                if (response == "Password changed.")
+                {
+                    NewPassword = newPwd;
+                    MessageBox.Show(
+                        "Password changed successfully!\nUse the new password next time you connect.",
+                        "Success",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    DialogResult = true;
+                    Close();
+                }
+                else
+                {
+                    lblError.Text = response ?? "Unknown error.";
+                }
             }
-            else
+            catch (System.Exception ex)
             {
-                lblError.Text = response ?? "No response from service.";
+                lblError.Text = $"ERROR: {ex.Message}";
+            }
+            finally
+            {
+                btnConfirm.IsEnabled = btnCancel.IsEnabled = true;
             }
         }
 
@@ -55,29 +79,6 @@ namespace USBGuardianControl
         {
             DialogResult = false;
             Close();
-        }
-
-        private async Task<string> SendChangePasswordAsync(string newPassword)
-        {
-            try
-            {
-                using var pipe = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
-                await pipe.ConnectAsync(2000);
-
-                using var reader = new StreamReader(pipe);
-                using var writer = new StreamWriter(pipe) { AutoFlush = true };
-
-                await writer.WriteLineAsync($"{_currentPassword}:CHANGEPASSWORD:{newPassword}");
-                return await reader.ReadLineAsync();
-            }
-            catch (System.TimeoutException)
-            {
-                return "ERROR:Service not running or unreachable.";
-            }
-            catch (System.Exception ex)
-            {
-                return $"ERROR:{ex.Message}";
-            }
         }
     }
 }

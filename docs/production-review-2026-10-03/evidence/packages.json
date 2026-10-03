@@ -1,0 +1,20 @@
+[
+  {
+    "Name": "USBGuardian-Control-1.1.2-x64.msi",
+    "Bytes": 56733696,
+    "Signature": "NotSigned",
+    "SHA256": "302DFD7C4752F070F5D5F632783BEEA88EAA503AEE84702D6A60929C2E26C542"
+  },
+  {
+    "Name": "USBGuardian-Endpoint-1.1.2-x64.msi",
+    "Bytes": 83443712,
+    "Signature": "NotSigned",
+    "SHA256": "10EBABBB44EAA00F9709E03955B378DD24F1227CC8C2231B89E783D55EB32979"
+  },
+  {
+    "Name": "USBGuardian-Server-1.1.2-x64.msi",
+    "Bytes": 36409344,
+    "Signature": "NotSigned",
+    "SHA256": "92D63E6DA2A0CC67FB63800B556AA94BF9BD6DC28E817B53BBF9426B597B6135"
+  }
+]

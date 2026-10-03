@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="USB Guardian Control"
+    Manufacturer="USB Guardian"
+    Version="$(ProductVersion)"
+    Language="1033"
+    UpgradeCode="{935E56EC-A752-4904-8D50-E7785EF4AA9B}"
+    Scope="perMachine"
+    InstallerVersion="500"
+    Compressed="yes">
+
+    <MajorUpgrade
+      Schedule="afterInstallInitialize"
+      DowngradeErrorMessage="A newer version of USB Guardian Control is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="CompanyFolder" Name="USB Guardian">
+        <Directory Id="INSTALLFOLDER" Name="Control" />
+      </Directory>
+    </StandardDirectory>
+
+    <Feature Id="ControlFeature" Title="USB Guardian Control" Level="1">
+      <ComponentRef Id="ControlComponent" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <Component
+      Id="ControlComponent"
+      Guid="{1FBB3788-E691-4600-AAC7-6E56F3C3210B}"
+      Directory="INSTALLFOLDER"
+      Bitness="always64">
+      <File
+        Id="ControlExe"
+        Source="$(PayloadRoot)/Control/USBGuardianControl.exe"
+        KeyPath="yes">
+        <Shortcut
+          Id="ControlStartMenuShortcut"
+          Directory="ProgramMenuFolder"
+          Name="USB Guardian Control"
+          Description="Manage USB Guardian endpoints."
+          WorkingDirectory="INSTALLFOLDER"
+          Advertise="yes" />
+      </File>
+    </Component>
+  </Fragment>
+</Wix>

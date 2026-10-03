@@ -1,112 +1,148 @@
-# USB Guardian Endpoint Security
+# USB Guardian
 
-USB Guardian is a robust, system-level security application designed to explicitly manage and lock down physical USB ports on Windows environments. It prevents unauthorized data exfiltration via USB Mass Storage, Phones, and MTP devices by electronically disabling Root Hub ports at the driver level — and also force-ejects any devices that are already connected when a lock command is issued.
+USB Guardian centrally controls removable storage and portable-device access on
+Windows endpoints. Policy is managed from a WPF dashboard, persisted by an
+ASP.NET Core server, and enforced locally by a Windows service.
 
-## Architecture
+## Components
 
-The project is split into three main components:
+| Project | Purpose |
+|---|---|
+| `USBGuardianServer` | REST API, SignalR hub, policy persistence, event history, CEF and SMTP sinks |
+| `USBGuardianAgent` | LocalSystem worker that enforces policy with WMI and `pnputil.exe` |
+| `USBGuardianControl` | WPF administrator dashboard |
+| `USBGuardianNotifier` | WPF user-session alert shown when a removable device is blocked |
+| `USBGuardianTests` | Regression tests for policy persistence, expiry, and device matching |
 
-1. **USBGuardianService (Core Daemon)**
-   A detached `.NET 8 Worker Service` that runs natively as `LocalSystem`. It loops every 5 seconds continuously enforcing security rules. It listens for authorized commands passively via a Named Pipe.
+The server defaults to `http://0.0.0.0:5050`. The address and port are
+configurable through `Http:BindAddress` and `Http:Port`. Set
+`Http:Enabled=false` after configuring HTTPS to run without a plaintext listener.
 
-2. **USBGuardianControl (Admin UI)**
-   A secure `.NET 8 WPF` application that administrators use to authenticate (via BCrypt password) and transmit locking commands to the hidden Service daemon.
+## Enforcement Model
 
-3. **System Configuration**
-   Hashed passwords and Blacklist/Whitelist policies are stored dynamically in `C:\ProgramData\USBGuardian\config.json`.
+The agent manages these targets:
 
-## Technical Mechanics
+- Removable mass storage using `USBSTOR`, plus USB UASP transport devices using `UASPStor`
+- MTP and portable devices such as phones and cameras
+- Optional optical, Bluetooth, and Wi-Fi sectors
+- Newly enumerated keyboard devices when BadUSB auto-block is enabled
 
-### Native Hub-Level Blocking
-Unlike older, unreliable methods that simply disable the `USBSTOR` registry key, USB Guardian targets the physical **USB Root Hub** network on your motherboard. It uses WMI (`Win32_PnPEntity`) to locate your physical hubs and executes native Windows `pnputil.exe` commands to cut the data/power pathways structurally.
+USB hubs and host controllers are displayed for inventory only. They are never
+disabled by normal policy enforcement because a hub may also carry the user's
+keyboard and mouse.
 
-### Force-Eject on Lock (Two-Layer Security)
-When the system is locked, USB Guardian enforces a **two-layer** shutdown:
-- **Layer 1** — Disables all USB Root Hubs (blocks new connections)
-- **Layer 2** — Scans for and individually disables any `USBSTOR` (flash drives, HDDs) and MTP (phones, cameras) devices that are **already connected and mounted**, preventing mid-session data exfiltration
+When the removable-device sector is locked, exact device IDs and VID/PID or
+VEN/PROD model rules determine which devices remain usable. Unlocking the sector
+does not erase those rules. Timed unlocks contain a persisted UTC expiry and
+therefore cannot become permanent after an agent or server reconnect.
 
-When unlocked, both layers are reversed — hubs are re-enabled and any previously force-ejected devices are automatically re-enabled within the next 5-second enforcement cycle.
+The agent caches the latest policy under
+`C:\ProgramData\USBGuardian\agent_policy_cache.json` and enforces it while the
+server is unavailable. Learn mode is fail-closed: it is active only while the
+control connection is healthy and its expiry is still in the future.
+The server separately persists endpoint identity, address, last-seen time, and
+last reported device count in `server_inventory.json`. Offline machines remain
+visible in the dashboard, and saved policy changes apply when they reconnect.
+For removable devices, optional sectors, and BadUSB keyboards, the agent records
+the hardware it disabled in `agent_managed_state.json`. It restores only that
+hardware when policy permits it, so devices disabled independently by Windows or
+an administrator stay disabled. Security events are durably queued in
+`agent_event_queue.json` until the Server accepts their stable event IDs.
 
-### Asynchronous IPC
-Communication between the Admin UI and Service is handled via Windows Named Pipes (`USBGuardianControlPipe`). Hardware execution runs in detached async Tasks inside C# to ensure the UI never freezes.
+Device arrival/removal events wake enforcement through WMI after a short PnP
+debounce. A five-second periodic pass remains as a recovery fallback if event
+delivery is unavailable or an event is missed.
 
-### Master Overrides
-- **Unlock All Indefinitely**: Global ALLOW rule. Wipes the legacy blacklist.
-- **Lock System (Enforce)**: Global BLOCK rule. Wipes the legacy whitelist. Immediately force-ejects connected devices.
-- **Timed Unlock**: Temporarily unlocks for N minutes, then auto-relocks.
-- **Granular Toggles**: Pick an individual USB Hub and explicitly allow or block it.
+## Build And Test
 
-### Change Password (In-App)
-Admins can change the BCrypt password directly from the Control Panel without touching the filesystem. A popup dialog authenticates the request over the Named Pipe and saves the new hash to `config.json` instantly.
+All projects target .NET 8. Endpoint enforcement requires Windows build 19041
+or newer (Windows 10 version 2004, Windows 11, or Windows Server 2022+).
+This is a capability floor; deploy on a supported, patched Windows edition.
 
-## Deployment & Usage
-
-### Installing the Service
-1. Run `Install-Background-Service.bat` as Administrator.
-2. The script registers `USBGuardianService.exe` as an auto-starting Windows Service running as LocalSystem.
-
-### Controlling the Ports
-1. Double-click `Start-Control.bat` (runs the UI as Administrator).
-2. Enter the default password (`admin`).
-3. View the live states of your motherboard Hubs and any connected devices.
-4. Click Lock/Unlock, or target specific ports.
-
-### Changing the Admin Password
-1. Enter your current password in the main window and click **Connect & Refresh**.
-2. Click **⚙ Change Password** (top-right of the auth row).
-3. Enter and confirm the new password in the popup dialog.
-4. Click **Change Password** — the new BCrypt hash is saved to `config.json` immediately.
-
-### Updating / Recompiling
-Double-click `Update-Service.bat` to gracefully halt the service, rebuild the entire `.sln`, copy new binaries for both the Service **and** the Control UI, and reboot the daemon.
-
-## File Structure
-
-### `USBGuardianService\` (Background Daemon)
-
-| File | Purpose |
-|------|---------|
-| `ConfigManager.cs` | Parses `config.json`. Handles BCrypt password verification and `ChangePassword()`. |
-| `PipeServer.cs` | Named Pipe IPC server. Handles: `LOCK`, `UNLOCK`, `STATUS`, `LIST`, `ALLOW`, `BLOCK`, `CHANGEPASSWORD`. |
-| `UsbPolicyManager.cs` | Core engine. Hub-level `pnputil` enforcement, `ForceEjectActiveUsbDevices()`, `ForceEnableUsbDevices()`, and full device listing with `IsHub` flag. |
-| `Worker.cs` | `.NET 8` BackgroundService loop — calls `Enforce()` every 5 seconds. |
-| `Program.cs` | Dependency Injection bootstrapping. |
-
-### `USBGuardianControl\` (Admin Panel)
-
-| File | Purpose |
-|------|---------|
-| `MainWindow.xaml` | WPF dashboard — PC hostname header, auth row, master policy controls, dual-template device list (Hub rows + Connected Device rows). |
-| `MainWindow.xaml.cs` | UI code-behind. Named Pipe client, auto-refresh timer (3 sec), all button handlers. |
-| `ChangePasswordWindow.xaml` | Modal popup for changing the admin password. |
-| `ChangePasswordWindow.xaml.cs` | Validates input, sends `CHANGEPASSWORD` over pipe, shows inline error or success message. |
-| `App.xaml` / `.cs` | Application bootstrapping. |
-
-### `.\` (Root Admin Scripts)
-
-| File | Purpose |
-|------|---------|
-| `Install-Background-Service.bat` | Registers the service as auto-start under LocalSystem. |
-| `Update-Service.bat` | Stops service → rebuilds & publishes **both** Service and Control UI → restarts service. |
-| `Start-Control.bat` | Launches the Admin UI as Administrator. |
-| `Uninstall-Background-Service.bat` | Stops and deletes the Windows service. |
-
-## Complete Deployment Guide
-
-**Step 1. Compilation**
-Ensure **.NET 8 SDK** is installed. In the project root:
-```cmd
+```bat
 dotnet build "USB Blocker.sln" -c Release
+dotnet test USBGuardianTests\USBGuardianTests.csproj -c Release
 ```
 
-**Step 2. Daemon Configuration**
-The default password is `admin`. It is BCrypt-hashed and stored in `C:\ProgramData\USBGuardian\config.json` on first run. Change it via the in-app **⚙ Change Password** dialog after first login.
+Windows is required for WPF execution, Windows-service operation, WMI device
+enumeration, and `pnputil` hardware tests. The server and pure policy tests can
+also be compiled on another OS with `-p:EnableWindowsTargeting=true`.
 
-**Step 3. Install the Windows Background Policy Engine**
-Right-click `Install-Background-Service.bat` → **Run as Administrator**.
-- Registers the executable under `services.msc` as `USB Guardian Service`
-- Sets `Start=Auto` (enforced on every boot)
-- Sets `obj=LocalSystem` (tamper resistant — cannot be killed by standard users)
+## Deployment
 
-**Step 4. Final Verification**
-Open `Start-Control.bat`, login with `admin`, confirm you can see the USB Root Hubs listed with their policy states and any connected device cards below them.
+Run the scripts from an elevated Command Prompt.
+
+1. Run `Install-Server.bat` on the management machine.
+2. Change the default `admin` password from
+   a dashboard running on the Server machine.
+3. Enroll each endpoint with its own credential using
+   [`docs/EndpointEnrollment.md`](docs/EndpointEnrollment.md), then install its Agent.
+4. Run `Start-Control.bat`, connect to the server, and verify the endpoint.
+
+`Install-Agent.bat` publishes both the service and notifier. The notifier is
+registered under the machine-wide Windows `Run` key so it starts in each user's
+interactive session. `Update-All.bat` publishes all four runtime projects.
+`Uninstall-All.bat` and Endpoint MSI removal invoke the Agent's recovery mode
+before deleting the service. Only devices recorded as disabled by USB Guardian
+are restored; failed device IDs stay in the managed-state file for recovery.
+
+The server installer stores a protected copy of the generated agent token at
+`C:\ProgramData\USBGuardian\agent_token.txt`. Server-side policies, events, and
+credentials remain under `C:\ProgramData\USBGuardian`.
+
+For managed deployment, run
+`USBGuardianInstaller\Build-Installers.ps1` on Windows. It creates separate
+self-contained x64 MSI packages for the Server, Endpoint, and Control dashboard.
+The Endpoint MSI accepts `SERVERURL`, optional `MACHINEID`, and its enrolled
+`AGENTTOKEN`. The Server MSI's `AGENTTOKEN` is only a legacy bootstrap secret. See
+[`docs/MSI_GPO_DEPLOYMENT.md`](docs/MSI_GPO_DEPLOYMENT.md).
+
+## Security Notes
+
+- The admin password is stored as a BCrypt hash.
+  New/rotated passwords use BCrypt's enhanced SHA-384 pre-hashing so the complete
+  password matters, including long or Unicode passphrases. Existing classic hashes
+  remain compatible until rotation; rotate administrator passwords after upgrade.
+- The initial `admin` password can be changed only over a loopback connection.
+  All remote admin API access remains rejected until that first rotation succeeds.
+- Agents authenticate with per-machine enrolled credentials. Shared-token migration
+  requires explicit `Security:AllowLegacySharedAgentToken=true`; it cannot authenticate
+  an enrolled identity. Unauthenticated development requires the explicit
+  `Security:AllowUnauthenticatedAgents` switch and an empty legacy AgentSecret.
+- Admin API requests are limited per source IP to 60 requests per minute.
+- HTTP remains enabled for LAN compatibility. Use HTTPS and set
+  `Http:Enabled=false` and `Security:RequireHttps=true` for production. See the
+  secure configuration template and enrollment guide.
+- CORS is disabled unless explicit origins are configured.
+
+For release signing, run `USBGuardianInstaller\Build-Installers.ps1 -Production
+-CertificateThumbprint <thumbprint> -Version <version>`. Production mode refuses
+unsigned payloads and verifies their signatures. The output includes a Bundle
+with its exact MSIs, hashes, enrollment helper and updated instructions.
+The current .NET 8 target must migrate before its support ends on 10 November 2026;
+self-contained packages must be rebuilt to carry runtime security updates.
+
+## Reference Package
+
+`MY_USB-Lock-RP200v13888` is a third-party binary/documentation reference, not a
+source dependency. Its stable operational patterns were evaluated without
+executing its installers or copying proprietary code. See
+[`docs/REFERENCE_COMPARISON.md`](docs/REFERENCE_COMPARISON.md) for the resulting
+feature and safety decisions.
+
+## Hardware Acceptance Gate
+
+A successful build does not prove Windows device behavior. Before production,
+test on representative Windows 10/11 hardware while the agent runs as
+LocalSystem:
+
+1. Lock with a keyboard and mouse attached, then insert an unauthorized USB
+   drive. Only the storage device should be disabled.
+2. Allow the exact device, then relock. It should remain usable.
+3. Unplug and reinsert it; enforcement must stay idempotent without repeated
+   reconnect loops.
+4. Run a short timed unlock, restart the agent, and verify it relocks at expiry.
+5. Disconnect the server during learn mode and verify the endpoint immediately
+   returns to protected behavior.
+6. Validate optical, Bluetooth, Wi-Fi, BadUSB, notifier, and uninstall recovery
+   on hardware approved for those tests.

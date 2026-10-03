@@ -1,0 +1,117 @@
+[
+  {
+    "name": "Health endpoint",
+    "status": "PASS",
+    "detail": "Isolated server responds."
+  },
+  {
+    "name": "Anonymous admin denied",
+    "status": "PASS",
+    "detail": "GET /api/agents without password."
+  },
+  {
+    "name": "Loopback password rotation",
+    "status": "PASS",
+    "detail": "New password accepted."
+  },
+  {
+    "name": "Windows PowerShell endpoint provisioning",
+    "status": "PASS",
+    "detail": "Protected configuration created; token not printed."
+  },
+  {
+    "name": "Provisioning replacement failure retains credential",
+    "status": "PASS",
+    "detail": "Locked destination fails; protected recovery configuration is retained."
+  },
+  {
+    "name": "PowerShell 7 endpoint provisioning",
+    "status": "PASS",
+    "detail": "Protected configuration replaced successfully."
+  },
+  {
+    "name": "Invalid agent token denied",
+    "status": "PASS",
+    "detail": "Registration rejected."
+  },
+  {
+    "name": "Authenticated registration",
+    "status": "PASS",
+    "detail": "Default policy locked."
+  },
+  {
+    "name": "Device snapshot",
+    "status": "PASS",
+    "detail": "Full PNP ID preserved."
+  },
+  {
+    "name": "Allow encoded PNP ID",
+    "status": "PASS",
+    "detail": "WPF HTTP client route roundtrip succeeds."
+  },
+  {
+    "name": "Block encoded PNP ID",
+    "status": "PASS",
+    "detail": "Block removes exact allow rule."
+  },
+  {
+    "name": "Timed unlock push",
+    "status": "PASS",
+    "detail": "UTC expiry included in policy."
+  },
+  {
+    "name": "Timed unlock persistence",
+    "status": "PASS",
+    "detail": "Expiry written to isolated policy file."
+  },
+  {
+    "name": "Lock after timed unlock",
+    "status": "PASS",
+    "detail": "Unlock expiry cleared."
+  },
+  {
+    "name": "Lock cancels learn bypass",
+    "status": "PASS",
+    "detail": "After Lock: IsUnlocked=False, LearnMode=False, agent ShouldAllow=False."
+  },
+  {
+    "name": "Group lock cancels learn",
+    "status": "PASS",
+    "detail": "LearnMode remains False."
+  },
+  {
+    "name": "Lock all cancels learn",
+    "status": "PASS",
+    "detail": "LearnMode remains False."
+  },
+  {
+    "name": "Sector policy push",
+    "status": "PASS",
+    "detail": "Optical sector flag delivered."
+  },
+  {
+    "name": "BadUSB policy push",
+    "status": "PASS",
+    "detail": "BadUSB flag delivered."
+  },
+  {
+    "name": "Matching enforcement receipt",
+    "status": "PASS",
+    "detail": "Matching revision and actual scan timestamp returned separately from policy intent."
+  },
+  {
+    "name": "Stale receipt cannot verify newer policy",
+    "status": "PASS",
+    "detail": "Older receipt rejected and desired policy replayed."
+  },
+  {
+    "name": "Invalid unlock duration denied",
+    "status": "PASS",
+    "detail": "Zero minutes returns 400."
+  },
+  {
+    "name": "Security event deduplication",
+    "status": "PASS",
+    "detail": "Duplicate GUID recorded once."
+  }
+]

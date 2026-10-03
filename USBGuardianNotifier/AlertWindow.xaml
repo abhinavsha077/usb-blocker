@@ -1,0 +1,27 @@
+<Window x:Class="USBGuardianNotifier.AlertWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="USB Guardian — Security Alert"
+        WindowStyle="None" ResizeMode="NoResize" WindowState="Maximized"
+        Topmost="True" ShowInTaskbar="False" Background="#0A0A0A"
+        FontFamily="Segoe UI" MouseDown="Window_Dismiss" KeyDown="Window_Key">
+    <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="900">
+            <TextBlock Text="🔒" FontSize="72" HorizontalAlignment="Center" Foreground="#E8B000" Margin="0,0,0,10"/>
+            <Border Background="#B00000" CornerRadius="6" Padding="26,10" HorizontalAlignment="Center">
+                <TextBlock Text="SECURITY ALERT" FontSize="40" FontWeight="Bold" Foreground="White"/>
+            </Border>
+            <TextBlock Text="You have connected an unauthorized device"
+                       FontSize="22" Foreground="#F0F0F0" HorizontalAlignment="Center" Margin="0,26,0,6"/>
+            <TextBlock x:Name="lblDevice" Text="Unauthorized USB device"
+                       FontSize="26" FontWeight="SemiBold" Foreground="#E8B000"
+                       HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,26"/>
+            <TextBlock Text="Please remove the device to continue."
+                       FontSize="20" Foreground="#F0F0F0" HorizontalAlignment="Center"/>
+            <TextBlock Text="Protected by USB Guardian" FontSize="13" Foreground="#7A7A7A"
+                       HorizontalAlignment="Center" Margin="0,40,0,0"/>
+            <TextBlock x:Name="lblHint" Text="This message closes automatically."
+                       FontSize="12" Foreground="#5A5A5A" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+        </StackPanel>
+    </Grid>
+</Window>

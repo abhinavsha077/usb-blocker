@@ -1,0 +1,137 @@
+[
+  {
+    "name": "Health endpoint",
+    "status": "PASS",
+    "detail": "Isolated server responds."
+  },
+  {
+    "name": "Anonymous admin denied",
+    "status": "PASS",
+    "detail": "GET /api/agents without password."
+  },
+  {
+    "name": "Loopback password rotation",
+    "status": "PASS",
+    "detail": "New password accepted."
+  },
+  {
+    "name": "Invalid agent token denied",
+    "status": "PASS",
+    "detail": "Registration rejected."
+  },
+  {
+    "name": "Authenticated registration",
+    "status": "PASS",
+    "detail": "Default policy locked."
+  },
+  {
+    "name": "Device snapshot",
+    "status": "PASS",
+    "detail": "Full PNP ID preserved."
+  },
+  {
+    "name": "Allow encoded PNP ID",
+    "status": "PASS",
+    "detail": "WPF HTTP client route roundtrip succeeds."
+  },
+  {
+    "name": "Block encoded PNP ID",
+    "status": "PASS",
+    "detail": "Block removes exact allow rule."
+  },
+  {
+    "name": "Timed unlock push",
+    "status": "PASS",
+    "detail": "UTC expiry included in policy."
+  },
+  {
+    "name": "Timed unlock persistence",
+    "status": "PASS",
+    "detail": "Expiry written to isolated policy file."
+  },
+  {
+    "name": "Lock after timed unlock",
+    "status": "PASS",
+    "detail": "Unlock expiry cleared."
+  },
+  {
+    "name": "Lock cancels learn bypass",
+    "status": "FAIL",
+    "detail": "After Lock: IsUnlocked=False, LearnMode=True, agent ShouldAllow=True."
+  },
+  {
+    "name": "Group lock cancels learn",
+    "status": "FAIL",
+    "detail": "LearnMode remains True."
+  },
+  {
+    "name": "Lock all cancels learn",
+    "status": "FAIL",
+    "detail": "LearnMode remains True."
+  },
+  {
+    "name": "Sector policy push",
+    "status": "PASS",
+    "detail": "Optical sector flag delivered."
+  },
+  {
+    "name": "BadUSB policy push",
+    "status": "PASS",
+    "detail": "BadUSB flag delivered."
+  },
+  {
+    "name": "Invalid unlock duration denied",
+    "status": "PASS",
+    "detail": "Zero minutes returns 400."
+  },
+  {
+    "name": "Security event deduplication",
+    "status": "PASS",
+    "detail": "Duplicate GUID recorded once."
+  },
+  {
+    "name": "Failed event persistence is not acknowledged",
+    "status": "FAIL",
+    "detail": "Hub invocation success=True; event persisted=False. Real Agent discards its outbox entry on success."
+  },
+  {
+    "name": "Failed policy save rolls back memory",
+    "status": "FAIL",
+    "detail": "Unlock HTTP=500; dashboard IsLocked=False; no unlock sent to simulated agent."
+  },
+  {
+    "name": "Endpoint credential is bound to identity",
+    "status": "FAIL",
+    "detail": "Second client using fleet token claimed REVIEW-ENDPOINT-A; original endpoint update rejected=True."
+  },
+  {
+    "name": "Offline policy persistence",
+    "status": "PASS",
+    "detail": "Offline endpoint retained with saved unlock policy."
+  },
+  {
+    "name": "Reconnect policy replay",
+    "status": "PASS",
+    "detail": "Saved policy delivered after reconnect."
+  },
+  {
+    "name": "Network attempt respects five-second enforcement budget",
+    "status": "FAIL",
+    "detail": "SignalR StartAsync still pending after 5.5s=True; Worker awaits this on its enforcement loop."
+  },
+  {
+    "name": "Compiled removable WQL query 1",
+    "status": "PASS",
+    "detail": "Query accepted; matching count=0. Device IDs not printed."
+  },
+  {
+    "name": "Compiled removable WQL query 2",
+    "status": "FAIL",
+    "detail": "Windows WMI rejects production query: InvalidQuery."
+  },
+  {
+    "name": "Portable WQL escaping control",
+    "status": "PASS",
+    "detail": "Escaping the WQL backslash makes the same query valid; matching count=1."
+  }
+]

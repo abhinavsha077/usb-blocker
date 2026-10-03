@@ -1,0 +1,19 @@
+id,title,severity,area,status
+F01,Webcam matched as portable storage,High,Agent,Fixed and regression verified; hardware acceptance pending
+F02,BCrypt long-password suffix truncation,High,Server,Fixed; existing password rotation required
+F03,Admin password forwarded by redirects,High,Control,Fixed and loopback regression verified
+F04,Endpoint token written before protected permissions,High,Deployment,Fixed and subprocess ACL tests verified
+F05,Runtime parent replacement and untrusted owner/link hazards,High,Persistence,Source controls added; LocalSystem adversarial acceptance pending
+F06,Notifier shared-session loss and startup/busy-file gap,Medium,Notifier,Fixed and inbox tests verified; interactive acceptance pending
+F07,Failed ownership cleanup falsely verified,High,Agent,Fixed and failure-injection verified
+F08,Unsupported pnputil Windows capability floor,High,Installer,Fixed and authoring verified
+F09,Machine identity audit filename collisions,High,Server,Fixed and migration/collision verified
+F10,In-place retention after event acknowledgement,High,Server,Fixed and retention regression verified
+F11,Stale bundle enrollment and WiX version intermediates,High,Packaging,Fixed and fresh 1.1.4 build verified
+F12,Unsigned artifacts mistaken for production,High,Release,Signing gate added; trusted signing pending
+G01,Physical USB enforcement qualification,High,Acceptance,Not verified
+G02,WPF and multi-session notifier qualification,High,Acceptance,Not verified
+G03,MSI lifecycle and LocalSystem failure/recovery qualification,High,Acceptance,Not verified
+G04,Live trusted HTTPS rollout and credential migration,High,Deployment,Not verified
+G05,Trusted production signatures,High,Release,Not signed
+G06,Supported runtime migration before 2026-11-10,High,Maintenance,Plan required

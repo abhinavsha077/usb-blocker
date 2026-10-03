@@ -1,0 +1,47 @@
+{
+  "reviewedOn": "2026-10-03",
+  "product": "USB Guardian",
+  "candidateVersion": "1.1.4",
+  "productionVerdict": "DO NOT SHIP: acceptance and signing gates pending",
+  "regressionTests": {
+    "failed": 0,
+    "skipped": 0,
+    "passed": 109
+  },
+  "integrationProbes": {
+    "passed": 34,
+    "failed": 0
+  },
+  "packages": [
+    {
+      "Name": "USBGuardian-Control-1.1.4-x64.msi",
+      "SHA256": "31BA8514F000C4F00947466F635129D25829764565E1E07DCF266761DB426FF8",
+      "Verified": true
+    },
+    {
+      "Name": "USBGuardian-Endpoint-1.1.4-x64.msi",
+      "SHA256": "90D7AD4459BF33E5A00AE1C8F5D9441E1149445304D84D3E4BB07993486BF520",
+      "Verified": true
+    },
+    {
+      "Name": "USBGuardian-Server-1.1.4-x64.msi",
+      "SHA256": "1326BDCD76B4F47B84EDB9E681C7644B6B228E619B0220EC42CC1B3C709DDF90",
+      "Verified": true
+    }
+  ],
+  "packageSignatures": "NotSigned",
+  "bundleScriptsAndHashesVerified": true,
+  "terminalRecurrence": "User confirmed stopped after separate AI-Control Watchdog launcher fix",
+  "notVerified": [
+    "Physical USB enforcement",
+    "Native WPF and multiple interactive sessions",
+    "LocalSystem adversarial/failure qualification",
+    "MSI lifecycle",
+    "Real TLS certificate rollout",
+    "Trusted production signing"
+  ],
+  "runtimeSupportDeadline": "2026-11-10",
+  "runtimeTarget": "net8.0",
+  "hardwareActionsPerformed": false,
+  "msisInstalled": false
+}

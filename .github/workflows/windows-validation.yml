@@ -1,0 +1,44 @@
+name: Windows validation
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-package:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: >-
+          dotnet restore "USB Blocker.sln"
+          -p:NuGetAudit=true
+          -p:NuGetAuditMode=all
+
+      - name: Build
+        run: dotnet build "USB Blocker.sln" --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test USBGuardianTests/USBGuardianTests.csproj --configuration Release --no-build
+
+      - name: Build unsigned MSI packages
+        shell: powershell
+        run: ./USBGuardianInstaller/Build-Installers.ps1 -Version 1.1.0
+
+      - name: Upload MSI packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: usb-guardian-msi
+          path: USBGuardianInstaller/output/*
+          if-no-files-found: error

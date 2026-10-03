@@ -1,0 +1,25 @@
+{
+  "product": "USB Guardian",
+  "review_date": "2026-10-03",
+  "base_commit": "8f76cf428dfc3470ed8a1d722b9f7095879509b6",
+  "scope": "Current working tree including existing modified and untracked source",
+  "verdict": "DO_NOT_SHIP",
+  "solution_release_build": {"status": "PASS", "warnings": 0, "errors": 0},
+  "existing_regressions": {"passed": 58, "failed": 0, "skipped": 0, "evidence": "evidence/unit-tests.trx"},
+  "isolated_review_probes": {"passed": 19, "failed": 8, "total": 27, "evidence": "evidence/integration-results.json"},
+  "nuget_advisory_query": {"status": "PASS", "known_vulnerable_packages_reported": 0, "include_transitive": true},
+  "self_contained_publish": {"status": "PASS", "runtime": "win-x64", "projects": 4},
+  "msi_linking": {"status": "PASS", "packages": 3, "version": "1.1.2", "signed": false, "evidence": "evidence/packages.json"},
+  "findings": {"critical": 1, "high": 8, "medium": 2, "total": 11},
+  "not_verified": [
+    "Physical USB disable and enable under LocalSystem",
+    "UASP enclosure block/unblock and first-arrival access timing",
+    "Windows 10/11 hardware compatibility matrix",
+    "Interactive WPF dashboard and notifier visual flows",
+    "MSI installation, upgrade, repair, rollback and uninstall",
+    "Disk-full/crash behavior of Agent hardcoded production state files",
+    "HTTPS certificate deployment and renewal"
+  ],
+  "production_runtime_source_modified": false,
+  "real_device_operations_performed": false
+}

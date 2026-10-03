@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix
+  xmlns="http://wixtoolset.org/schemas/v4/wxs"
+  xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+  <Package
+    Name="USB Guardian Endpoint"
+    Manufacturer="USB Guardian"
+    Version="$(ProductVersion)"
+    Language="1033"
+    UpgradeCode="{FF908C2D-E0BD-48A1-9564-79A3C59B9A2B}"
+    Scope="perMachine"
+    InstallerVersion="500"
+    Compressed="yes">
+
+    <MajorUpgrade
+      Schedule="afterInstallInitialize"
+      DowngradeErrorMessage="A newer version of USB Guardian Endpoint is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Property Id="WINDOWSBUILDNUMBER" Secure="yes">
+      <RegistrySearch Id="EndpointBuildNumberSearch" Root="HKLM"
+        Key="SOFTWARE\Microsoft\Windows NT\CurrentVersion"
+        Name="CurrentBuildNumber" Type="raw" />
+    </Property>
+    <Launch Condition="Installed OR (WINDOWSBUILDNUMBER &gt;= 19041)"
+      Message="USB Guardian Endpoint requires Windows 10 version 2004 (build 19041) or newer, including Windows 11 and Windows Server 2022 or newer." />
+
+    <Property Id="SERVERURL" Secure="yes" />
+    <Property Id="MACHINEID" Secure="yes" />
+    <Property Id="EXISTING_MACHINEID" Secure="yes">
+      <RegistrySearch Id="ExistingMachineIdSearch" Root="HKLM"
+        Key="SOFTWARE\USBGuardian\Agent" Name="MachineId" Type="raw" />
+    </Property>
+    <Property Id="AGENTTOKEN" Secure="yes" Hidden="yes" />
+    <Property Id="EXISTING_SERVERURL" Secure="yes">
+      <RegistrySearch
+        Id="ExistingServerUrlSearch"
+        Root="HKLM"
+        Key="SOFTWARE\USBGuardian\Agent"
+        Name="ServerUrl"
+        Type="raw" />
+    </Property>
+    <Property Id="EXISTING_AGENTTOKEN" Secure="yes" Hidden="yes">
+      <RegistrySearch
+        Id="ExistingAgentTokenSearch"
+        Root="HKLM"
+        Key="SOFTWARE\USBGuardian\Agent"
+        Name="AgentToken"
+        Type="raw" />
+    </Property>
+    <SetProperty
+      Id="SERVERURL"
+      Value="[EXISTING_SERVERURL]"
+      After="AppSearch"
+      Sequence="first"
+      Condition="NOT SERVERURL AND EXISTING_SERVERURL" />
+    <SetProperty
+      Id="MACHINEID" Value="[EXISTING_MACHINEID]" After="AppSearch"
+      Sequence="first" Condition="NOT MACHINEID AND EXISTING_MACHINEID" />
+    <SetProperty
+      Id="AGENTTOKEN"
+      Value="[EXISTING_AGENTTOKEN]"
+      After="AppSearch"
+      Sequence="first"
+      Condition="NOT AGENTTOKEN AND EXISTING_AGENTTOKEN" />
+
+    <Launch
+      Condition="Installed OR (SERVERURL AND AGENTTOKEN)"
+      Message="Set SERVERURL and this endpoint's enrolled AGENTTOKEN. Set MACHINEID when enrollment uses a custom identity." />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="CompanyFolder" Name="USB Guardian">
+        <Directory Id="INSTALLFOLDER" Name="Endpoint" />
+      </Directory>
+    </StandardDirectory>
+
+    <Feature Id="EndpointFeature" Title="USB Guardian Endpoint" Level="1">
+      <ComponentGroupRef Id="EndpointComponents" />
+    </Feature>
+
+    <CustomAction
+      Id="RestoreManagedDevices"
+      FileRef="AgentExe"
+      ExeCommand="--restore-managed-devices"
+      Execute="deferred"
+      Impersonate="no"
+      Return="ignore" />
+    <InstallExecuteSequence>
+      <Custom
+        Action="RestoreManagedDevices"
+        After="StopServices"
+        Condition="REMOVE~=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+    </InstallExecuteSequence>
+  </Package>
+
+  <Fragment>
+    <ComponentGroup Id="EndpointComponents" Directory="INSTALLFOLDER">
+      <Component
+        Id="AgentServiceComponent"
+        Guid="{A58FA459-ECE7-45DA-B21D-A77353072CF8}"
+        Bitness="always64">
+        <File
+          Id="AgentExe"
+          Source="$(PayloadRoot)/Endpoint/USBGuardianAgent.exe"
+          KeyPath="yes" />
+        <File
+          Id="AgentAppSettings"
+          Source="$(PayloadRoot)/Endpoint/appsettings.json" />
+        <ServiceInstall
+          Id="AgentServiceInstall"
+          Name="USB Guardian Agent"
+          DisplayName="USB Guardian Agent"
+          Description="Enforces USB Guardian endpoint device policy."
+          Type="ownProcess"
+          Start="auto"
+          ErrorControl="normal"
+          Account="LocalSystem">
+          <util:ServiceConfig
+            FirstFailureActionType="restart"
+            SecondFailureActionType="restart"
+            ThirdFailureActionType="none"
+            ResetPeriodInDays="1"
+            RestartServiceDelayInSeconds="5" />
+        </ServiceInstall>
+        <ServiceControl
+          Id="AgentServiceControl"
+          Name="USB Guardian Agent"
+          Start="install"
+          Stop="both"
+          Remove="uninstall"
+          Wait="yes" />
+      </Component>
+
+      <Component
+        Id="NotifierComponent"
+        Guid="{3D88C0B3-CE03-43CE-AF98-EB610410C43D}"
+        Bitness="always64">
+        <File
+          Id="NotifierExe"
+          Source="$(PayloadRoot)/Endpoint/USBGuardianNotifier.exe"
+          KeyPath="yes" />
+        <RegistryValue
+          Root="HKLM"
+          Key="Software\Microsoft\Windows\CurrentVersion\Run"
+          Name="USBGuardianNotifier"
+          Type="string"
+          Value="&quot;[#NotifierExe]&quot;" />
+      </Component>
+
+      <Component
+        Id="AgentInstallerConfiguration"
+        Guid="{833F9B8C-5EF6-47F3-A80E-7718DE2E2722}"
+        Bitness="always64">
+        <RegistryKey
+          Id="AgentConfigurationKey"
+          Root="HKLM"
+          Key="SOFTWARE\USBGuardian\Agent"
+          ForceCreateOnInstall="yes">
+          <PermissionEx
+            Id="AgentConfigurationPermissions"
+            Sddl="D:P(A;;KA;;;SY)(A;;KA;;;BA)" />
+          <RegistryValue
+            Id="AgentServerUrl"
+            Name="ServerUrl"
+            Type="string"
+            Value="[SERVERURL]"
+            KeyPath="yes" />
+          <RegistryValue
+            Id="AgentMachineId" Name="MachineId" Type="string" Value="[MACHINEID]" />
+          <RegistryValue
+            Id="AgentAuthenticationToken"
+            Name="AgentToken"
+            Type="string"
+            Value="[AGENTTOKEN]" />
+        </RegistryKey>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

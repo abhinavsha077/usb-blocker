@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix
+  xmlns="http://wixtoolset.org/schemas/v4/wxs"
+  xmlns:firewall="http://wixtoolset.org/schemas/v4/wxs/firewall"
+  xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+  <Package
+    Name="USB Guardian Server"
+    Manufacturer="USB Guardian"
+    Version="$(ProductVersion)"
+    Language="1033"
+    UpgradeCode="{B10E1E32-D900-40F7-BD5A-15BB91580DB9}"
+    Scope="perMachine"
+    InstallerVersion="500"
+    Compressed="yes">
+
+    <MajorUpgrade
+      Schedule="afterInstallInitialize"
+      DowngradeErrorMessage="A newer version of USB Guardian Server is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Property Id="AGENTTOKEN" Secure="yes" Hidden="yes" />
+    <Property Id="EXISTING_AGENTTOKEN" Secure="yes" Hidden="yes">
+      <RegistrySearch
+        Id="ExistingServerAgentTokenSearch"
+        Root="HKLM"
+        Key="SOFTWARE\USBGuardian\Server"
+        Name="AgentSecret"
+        Type="raw" />
+    </Property>
+    <SetProperty
+      Id="AGENTTOKEN"
+      Value="[EXISTING_AGENTTOKEN]"
+      After="AppSearch"
+      Sequence="first"
+      Condition="NOT AGENTTOKEN AND EXISTING_AGENTTOKEN" />
+    <Launch
+      Condition="Installed OR AGENTTOKEN"
+      Message="Set AGENTTOKEN for the first server installation." />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="CompanyFolder" Name="USB Guardian">
+        <Directory Id="INSTALLFOLDER" Name="Server" />
+      </Directory>
+    </StandardDirectory>
+
+    <Feature Id="ServerFeature" Title="USB Guardian Server" Level="1">
+      <ComponentGroupRef Id="ServerComponents" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <ComponentGroup Id="ServerComponents" Directory="INSTALLFOLDER">
+      <Component
+        Id="ServerServiceComponent"
+        Guid="{A5197117-A3D6-413A-8FC4-CC52CB2ED436}"
+        Bitness="always64">
+        <File
+          Id="ServerExe"
+          Source="$(PayloadRoot)/Server/USBGuardianServer.exe"
+          KeyPath="yes">
+          <firewall:FirewallException
+            Id="ServerFirewallRule"
+            Name="USB Guardian Server"
+            Description="Allows authenticated USB Guardian agent and dashboard traffic."
+            Port="5050"
+            Protocol="tcp"
+            Profile="all"
+            Scope="any"
+            IgnoreFailure="no" />
+        </File>
+        <ServiceInstall
+          Id="ServerServiceInstall"
+          Name="USB Guardian Server"
+          DisplayName="USB Guardian Server"
+          Description="Central policy and event service for USB Guardian."
+          Type="ownProcess"
+          Start="auto"
+          ErrorControl="normal"
+          Account="LocalSystem">
+          <util:ServiceConfig
+            FirstFailureActionType="restart"
+            SecondFailureActionType="restart"
+            ThirdFailureActionType="none"
+            ResetPeriodInDays="1"
+            RestartServiceDelayInSeconds="5" />
+        </ServiceInstall>
+        <ServiceControl
+          Id="ServerServiceControl"
+          Name="USB Guardian Server"
+          Start="install"
+          Stop="both"
+          Remove="uninstall"
+          Wait="yes" />
+      </Component>
+
+      <Component
+        Id="ServerAppSettingsComponent"
+        Guid="{7FD3AE09-CA7A-45BC-B3C6-6FF27A3647D2}"
+        Bitness="always64">
+        <File
+          Id="ServerAppSettings"
+          Source="$(PayloadRoot)/Server/appsettings.json"
+          KeyPath="yes" />
+      </Component>
+
+      <Component
+        Id="ServerInstallerConfiguration"
+        Guid="{9352074E-6E68-430D-9834-979E83F74CD2}"
+        Bitness="always64">
+        <RegistryKey
+          Id="ServerConfigurationKey"
+          Root="HKLM"
+          Key="SOFTWARE\USBGuardian\Server"
+          ForceCreateOnInstall="yes">
+          <PermissionEx
+            Id="ServerConfigurationPermissions"
+            Sddl="D:P(A;;KA;;;SY)(A;;KA;;;BA)" />
+          <RegistryValue
+            Id="ServerAgentAuthenticationToken"
+            Name="AgentSecret"
+            Type="string"
+            Value="[AGENTTOKEN]"
+            KeyPath="yes" />
+        </RegistryKey>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

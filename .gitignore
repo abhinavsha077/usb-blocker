@@ -1,0 +1,38 @@
+# Build artifacts
+[Bb]in/
+[Oo]bj/
+Dist/
+*.user
+*.suo
+.vs/
+
+# Publish output
+publish/
+[Pp]ublish/
+USBGuardianInstaller/artifacts/
+USBGuardianInstaller/output/
+
+# Local runtime data
+*.log
+usb_status.json
+usb_devices_present.json
+
+# Third-party reference product (proprietary — never commit)
+MY_USB-Lock-RP200v13888/
+
+# Large SDK/runtime bundles (distribute out-of-band, not in git)
+Requirement/
+*.sdk.zip
+dotnet-sdk-*.exe
+dotnet-sdk-*.zip
+
+# OS cruft
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Local tools and generated verification output
+.claude/
+ReleasePackages/
+artifacts/
+TestResults/

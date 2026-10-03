@@ -1,0 +1,12 @@
+id,title,severity,priority,area,status,evidence
+R01,Portable-device WQL is invalid,Critical,P0,Agent,Confirmed,Compiled query rejected by Windows WMI
+R02,Lock leaves learn mode permissive,High,P1,Policy,Confirmed,Single group and all-machine probes fail
+R03,Network operations suspend enforcement loop,High,P1,Agent,Confirmed,SignalR startup pending after 5.5 seconds
+R04,Failed event writes are acknowledged and lost,High,P1,Audit,Confirmed,Locked event file produces success without persistence
+R05,UASP storage classification coverage gap,High,P1,Agent,Source-backed coverage inference,USBSTOR-only queries and Microsoft class-driver documentation
+R06,Dashboard confuses intent with applied state,High,P1,Control,Source-confirmed,Labels use policy flag rather than observed status
+R07,Fleet token can replace another endpoint identity,High,P1,Security,Confirmed,Second simulated connection takes over first identity
+R08,Default deployment transports privileged credentials in plaintext,High,P1,Deployment,Source-confirmed,HTTP enabled and HTTPS disabled
+R09,Endpoint persistence failure breaks offline safety and recovery,High,P1,Agent,Source-confirmed,Failed cache and managed-state writes swallowed without dirty retry
+R10,Failed policy save leaves changed live memory,Medium,P2,Server,Confirmed,HTTP 500 followed by OPEN summary without policy push
+R11,Stale device refresh can replace selected-machine list,Medium,P2,Control,Source-confirmed,No identity or request-version guard after await
